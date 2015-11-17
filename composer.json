@@ -1,0 +1,43 @@
+{
+  "name"             : "onderdelen/auth",
+  "description"      : "Description auth",
+  "keywords"         : [
+    "onderdelen",
+    "auth"
+  ],
+  "homepage"         : "https://github.com/onderdelen/auth",
+  "license"          : "MIT",
+  "authors"          : [
+    {
+      "name"    : "anonymoussc",
+      "email"   : "50c5ac69@opayq.com",
+      "homepage": "https://github.com/onderdelen",
+      "role"    : "Developer"
+    }
+  ],
+  "require"          : {
+    "php"                 : ">=5.5.9",
+    "illuminate/support"  : "5.1.*@dev",
+    "illuminate/contracts": "5.1.*@dev"
+  },
+  "require-dev"      : {
+    "phpunit/phpunit"   : "4.*",
+    "scrutinizer/ocular": "~1.1"
+  },
+  "autoload"         : {
+    "classmap": [
+      "src/seeds",
+      "src/controllers",
+      "tests"
+    ],
+    "psr-4"   : {
+      "Onderdelen\\Auth\\": "src"
+    }
+  },
+  "autoload-dev"     : {
+    "psr-4": {
+      "Onderdelen\\Auth\\Test\\": "tests"
+    }
+  },
+  "minimum-stability": "stable"
+}
