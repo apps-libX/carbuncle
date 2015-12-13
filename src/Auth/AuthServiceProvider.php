@@ -1,5 +1,7 @@
 <?php namespace Auth;
 
+use ReflectionClass;
+use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
