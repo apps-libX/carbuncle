@@ -327,7 +327,7 @@ class Carbuncle {
 		$toPersist = array($user->getId(), $user->getPersistCode());
 
 		// Set sessions
-		$this->session->put($toPersist);
+		// $this->session->put($toPersist);
 
 		if ($remember)
 		{
