@@ -1,22 +1,10 @@
-<?php namespace Einherjars\Carbuncle;
+<?php
 /**
- * Part of the Carbuncle package.
- *
- * NOTICE OF LICENSE
- *
- * Licensed under the 3-clause BSD License.
- *
- * This source file is subject to the 3-clause BSD License that is
- * bundled with this package in the LICENSE file.  It is also available at
- * the following URL: http://www.opensource.org/licenses/BSD-3-Clause
- *
- * @package    Carbuncle
- * @version    2.0.0
- * @author     Einherjars LLC
- * @license    BSD License (3-clause)
- * @copyright  (c) 2011 - 2013, Einherjars LLC
- * @link       http://einherjars.com
+ * Carbuncle.php
+ * Created by anonymous on 07/02/16 13:26.
  */
+
+namespace Einherjars\Carbuncle;
 
 use Einherjars\Carbuncle\Cookies\CookieInterface;
 use Einherjars\Carbuncle\Cookies\NativeCookie;
@@ -35,7 +23,8 @@ use Einherjars\Carbuncle\Users\UserInterface;
 use Einherjars\Carbuncle\Users\UserNotFoundException;
 use Einherjars\Carbuncle\Users\UserNotActivatedException;
 
-class Carbuncle {
+class Carbuncle
+{
 
 	/**
 	 * The user that's been retrieved and is used
@@ -98,12 +87,12 @@ class Carbuncle {
 	/**
 	 * Create a new Carbuncle object.
 	 *
-	 * @param  \Einherjars\Carbuncle\Users\ProviderInterface $userProvider
-	 * @param  \Einherjars\Carbuncle\Groups\ProviderInterface $groupProvider
+	 * @param  \Einherjars\Carbuncle\Users\ProviderInterface      $userProvider
+	 * @param  \Einherjars\Carbuncle\Groups\ProviderInterface     $groupProvider
 	 * @param  \Einherjars\Carbuncle\Throttling\ProviderInterface $throttleProvider
-	 * @param  \Einherjars\Carbuncle\Sessions\SessionInterface $session
-	 * @param  \Einherjars\Carbuncle\Cookies\CookieInterface $cookie
-	 * @param  string $ipAddress
+	 * @param  \Einherjars\Carbuncle\Sessions\SessionInterface    $session
+	 * @param  \Einherjars\Carbuncle\Cookies\CookieInterface      $cookie
+	 * @param  string                                             $ipAddress
 	 * @return void
 	 */
 	public function __construct(
@@ -113,17 +102,15 @@ class Carbuncle {
 		SessionInterface $session = null,
 		CookieInterface $cookie = null,
 		$ipAddress = null
-	)
-	{
+	) {
 		$this->userProvider     = $userProvider ?: new UserProvider(new NativeHasher);
 		$this->groupProvider    = $groupProvider ?: new GroupProvider;
 		$this->throttleProvider = $throttleProvider ?: new ThrottleProvider($this->userProvider);
 
-		$this->session          = $session ?: new NativeSession;
-		$this->cookie           = $cookie ?: new NativeCookie;
+		$this->session = $session ?: new NativeSession;
+		$this->cookie  = $cookie ?: new NativeCookie;
 
-		if (isset($ipAddress))
-		{
+		if (isset($ipAddress)) {
 			$this->ipAddress = $ipAddress;
 		}
 	}
@@ -132,16 +119,15 @@ class Carbuncle {
 	 * Registers a user by giving the required credentials
 	 * and an optional flag for whether to activate the user.
 	 *
-	 * @param  array  $credentials
-	 * @param  bool   $activate
+	 * @param  array $credentials
+	 * @param  bool  $activate
 	 * @return \Einherjars\Carbuncle\Users\UserInterface
 	 */
 	public function register(array $credentials, $activate = false)
 	{
 		$user = $this->userProvider->create($credentials);
 
-		if ($activate)
-		{
+		if ($activate) {
 			$user->attemptActivation($user->getActivationCode());
 		}
 
@@ -153,8 +139,8 @@ class Carbuncle {
 	 * Attempts to authenticate the given user
 	 * according to the passed credentials.
 	 *
-	 * @param  array  $credentials
-	 * @param  bool   $remember
+	 * @param  array $credentials
+	 * @param  bool  $remember
 	 * @return \Einherjars\Carbuncle\Users\UserInterface
 	 * @throws \Einherjars\Carbuncle\Throttling\UserBannedException
 	 * @throws \Einherjars\Carbuncle\Throttling\UserSuspendedException
@@ -166,24 +152,21 @@ class Carbuncle {
 	{
 		// We'll default to the login name field, but fallback to a hard-coded
 		// 'login' key in the array that was passed.
-		$loginName = $this->userProvider->getEmptyUser()->getLoginName();
+		$loginName          = $this->userProvider->getEmptyUser()->getLoginName();
 		$loginCredentialKey = (isset($credentials[$loginName])) ? $loginName : 'login';
 
-		if (empty($credentials[$loginCredentialKey]))
-		{
+		if (empty($credentials[$loginCredentialKey])) {
 			throw new LoginRequiredException("The [$loginCredentialKey] attribute is required.");
 		}
 
-		if (empty($credentials['password']))
-		{
+		if (empty($credentials['password'])) {
 			throw new PasswordRequiredException('The password attribute is required.');
 		}
 
 		// If the user did the fallback 'login' key for the login code which
 		// did not match the actual login name, we'll adjust the array so the
 		// actual login name is provided.
-		if ($loginCredentialKey !== $loginName)
-		{
+		if ($loginCredentialKey !== $loginName) {
 			$credentials[$loginName] = $credentials[$loginCredentialKey];
 			unset($credentials[$loginCredentialKey]);
 		}
@@ -191,30 +174,23 @@ class Carbuncle {
 		// If throttling is enabled, we'll firstly check the throttle.
 		// This will tell us if the user is banned before we even attempt
 		// to authenticate them
-		if ($throttlingEnabled = $this->throttleProvider->isEnabled())
-		{
-			if ($throttle = $this->throttleProvider->findByUserLogin($credentials[$loginName], $this->ipAddress))
-			{
+		if ($throttlingEnabled = $this->throttleProvider->isEnabled()) {
+			if ($throttle = $this->throttleProvider->findByUserLogin($credentials[$loginName], $this->ipAddress)) {
 				$throttle->check();
 			}
 		}
 
-		try
-		{
+		try {
 			$user = $this->userProvider->findByCredentials($credentials);
-		}
-		catch (UserNotFoundException $e)
-		{
-			if ($throttlingEnabled and isset($throttle))
-			{
+		} catch (UserNotFoundException $e) {
+			if ($throttlingEnabled and isset($throttle)) {
 				$throttle->addLoginAttempt();
 			}
 
 			throw $e;
 		}
 
-		if ($throttlingEnabled and isset($throttle))
-		{
+		if ($throttlingEnabled and isset($throttle)) {
 			$throttle->clearLoginAttempts();
 		}
 
@@ -228,7 +204,7 @@ class Carbuncle {
 	/**
 	 * Alias for authenticating with the remember flag checked.
 	 *
-	 * @param  array  $credentials
+	 * @param  array $credentials
 	 * @return \Einherjars\Carbuncle\Users\UserInterface
 	 */
 	public function authenticateAndRemember(array $credentials)
@@ -243,30 +219,24 @@ class Carbuncle {
 	 */
 	public function check()
 	{
-		if (is_null($this->user))
-		{
+		if (is_null($this->user)) {
 			// Check session first, follow by cookie
-			if ( ! $userArray = $this->session->get() and ! $userArray = $this->cookie->get())
-			{
+			if (!$userArray = $this->session->get() and !$userArray = $this->cookie->get()) {
 				return false;
 			}
 
 			// Now check our user is an array with two elements,
 			// the username followed by the persist code
-			if ( ! is_array($userArray) or count($userArray) !== 2)
-			{
+			if (!is_array($userArray) or count($userArray) !== 2) {
 				return false;
 			}
 
 			list($id, $persistCode) = $userArray;
 
 			// Let's find our user
-			try
-			{
+			try {
 				$user = $this->getUserProvider()->findById($id);
-			}
-			catch (UserNotFoundException $e)
-			{
+			} catch (UserNotFoundException $e) {
 				return false;
 			}
 
@@ -274,8 +244,7 @@ class Carbuncle {
 			// against the user. If it fails, somebody has tampered
 			// with the cookie / session data and we're not allowing
 			// a login
-			if ( ! $user->checkPersistCode($persistCode))
-			{
+			if (!$user->checkPersistCode($persistCode)) {
 				return false;
 			}
 
@@ -284,19 +253,17 @@ class Carbuncle {
 		}
 
 		// Let's check our cached user is indeed activated
-		if ( ! $user = $this->getUser() or ! $user->isActivated())
-		{
+		if (!$user = $this->getUser() or !$user->isActivated()) {
 			return false;
 		}
 		// If throttling is enabled we check it's status
-		if( $this->getThrottleProvider()->isEnabled())
-		{
+		if ($this->getThrottleProvider()->isEnabled()) {
 			// Check the throttle status
-			$throttle = $this->getThrottleProvider()->findByUser( $user );
+			$throttle = $this->getThrottleProvider()->findByUser($user);
 
-			if( $throttle->isBanned() or $throttle->isSuspended())
-			{
+			if ($throttle->isBanned() or $throttle->isSuspended()) {
 				$this->logout();
+
 				return false;
 			}
 		}
@@ -308,15 +275,14 @@ class Carbuncle {
 	 * Logs in the given user and sets properties
 	 * in the session.
 	 *
-	 * @param  \Einherjars\Carbuncle\Users\UserInterface  $user
-	 * @param  bool  $remember
+	 * @param  \Einherjars\Carbuncle\Users\UserInterface $user
+	 * @param  bool                                      $remember
 	 * @return void
 	 * @throws \Einherjars\Carbuncle\Users\UserNotActivatedException
 	 */
 	public function login(UserInterface $user, $remember = false)
 	{
-		if ( ! $user->isActivated())
-		{
+		if (!$user->isActivated()) {
 			$login = $user->getLogin();
 			throw new UserNotActivatedException("Cannot login user [$login] as they are not activated.");
 		}
@@ -324,13 +290,12 @@ class Carbuncle {
 		$this->user = $user;
 
 		// Create an array of data to persist to the session and / or cookie
-		$toPersist = array($user->getId(), $user->getPersistCode());
+		$toPersist = [$user->getId(), $user->getPersistCode()];
 
 		// Set sessions
 		// $this->session->put($toPersist);
 
-		if ($remember)
-		{
+		if ($remember) {
 			$this->cookie->forever($toPersist);
 		}
 
@@ -342,7 +307,7 @@ class Carbuncle {
 	/**
 	 * Alias for logging in and remembering.
 	 *
-	 * @param  \Einherjars\Carbuncle\Users\UserInterface  $user
+	 * @param  \Einherjars\Carbuncle\Users\UserInterface $user
 	 */
 	public function loginAndRemember(UserInterface $user)
 	{
@@ -381,8 +346,7 @@ class Carbuncle {
 	public function getUser()
 	{
 		// We will lazily attempt to load our user
-		if (is_null($this->user))
-		{
+		if (is_null($this->user)) {
 			$this->check();
 		}
 
@@ -392,7 +356,7 @@ class Carbuncle {
 	/**
 	 * Sets the session driver for Carbuncle.
 	 *
-	 * @param  \Einherjars\Carbuncle\Sessions\SessionInterface  $session
+	 * @param  \Einherjars\Carbuncle\Sessions\SessionInterface $session
 	 * @return void
 	 */
 	public function setSession(SessionInterface $session)
@@ -413,7 +377,7 @@ class Carbuncle {
 	/**
 	 * Sets the cookie driver for Carbuncle.
 	 *
-	 * @param  \Einherjars\Carbuncle\Cookies\CookieInterface  $cookie
+	 * @param  \Einherjars\Carbuncle\Cookies\CookieInterface $cookie
 	 * @return void
 	 */
 	public function setCookie(CookieInterface $cookie)
@@ -497,7 +461,7 @@ class Carbuncle {
 	/**
 	 * Sets the IP address Carbuncle is bound to.
 	 *
-	 * @param  string  $ipAddress
+	 * @param  string $ipAddress
 	 * @return void
 	 */
 	public function setIpAddress($ipAddress)
@@ -518,7 +482,7 @@ class Carbuncle {
 	/**
 	 * Find the group by ID.
 	 *
-	 * @param  int  $id
+	 * @param  int $id
 	 * @return \Einherjars\Carbuncle\Groups\GroupInterface  $group
 	 * @throws \Einherjars\Carbuncle\Groups\GroupNotFoundException
 	 */
@@ -530,7 +494,7 @@ class Carbuncle {
 	/**
 	 * Find the group by name.
 	 *
-	 * @param  string  $name
+	 * @param  string $name
 	 * @return \Einherjars\Carbuncle\Groups\GroupInterface  $group
 	 * @throws \Einherjars\Carbuncle\Groups\GroupNotFoundException
 	 */
@@ -552,7 +516,7 @@ class Carbuncle {
 	/**
 	 * Creates a group.
 	 *
-	 * @param  array  $attributes
+	 * @param  array $attributes
 	 * @return \Einherjars\Carbuncle\Groups\GroupInterface
 	 */
 	public function createGroup(array $attributes)
@@ -564,7 +528,7 @@ class Carbuncle {
 	/**
 	 * Finds a user by the given user ID.
 	 *
-	 * @param  mixed  $id
+	 * @param  mixed $id
 	 * @return \Einherjars\Carbuncle\Users\UserInterface
 	 * @throws \Einherjars\Carbuncle\Users\UserNotFoundException
 	 */
@@ -576,7 +540,7 @@ class Carbuncle {
 	/**
 	 * Finds a user by the login value.
 	 *
-	 * @param  string  $login
+	 * @param  string $login
 	 * @return \Einherjars\Carbuncle\Users\UserInterface
 	 * @throws \Einherjars\Carbuncle\Users\UserNotFoundException
 	 */
@@ -588,18 +552,19 @@ class Carbuncle {
 	/**
 	 * Finds a user by the given credentials.
 	 *
-	 * @param  array  $credentials
+	 * @param  array $credentials
 	 * @return \Einherjars\Carbuncle\Users\UserInterface
 	 * @throws \Einherjars\Carbuncle\Users\UserNotFoundException
 	 */
-	public function findUserByCredentials(array $credentials){
+	public function findUserByCredentials(array $credentials)
+	{
 		return $this->userProvider->findByCredentials($credentials);
 	}
 
 	/**
 	 * Finds a user by the given activation code.
 	 *
-	 * @param  string  $code
+	 * @param  string $code
 	 * @return \Einherjars\Carbuncle\Users\UserInterface
 	 * @throws \RuntimeException
 	 * @throws \Einherjars\Carbuncle\Users\UserNotFoundException
@@ -612,7 +577,7 @@ class Carbuncle {
 	/**
 	 * Finds a user by the given reset password code.
 	 *
-	 * @param  string  $code
+	 * @param  string $code
 	 * @return \Einherjars\Carbuncle\Users\UserInterface
 	 * @throws \RuntimeException
 	 * @throws \Einherjars\Carbuncle\Users\UserNotFoundException
@@ -636,7 +601,7 @@ class Carbuncle {
 	 * Returns all users who belong to
 	 * a group.
 	 *
-	 * @param  \Einherjars\Carbuncle\Groups\GroupInterface  $group
+	 * @param  \Einherjars\Carbuncle\Groups\GroupInterface $group
 	 * @return array
 	 */
 	public function findAllUsersInGroup($group)
@@ -648,7 +613,7 @@ class Carbuncle {
 	 * Returns all users with access to
 	 * a permission(s).
 	 *
-	 * @param  string|array  $permissions
+	 * @param  string|array $permissions
 	 * @return array
 	 */
 	public function findAllUsersWithAccess($permissions)
@@ -660,7 +625,7 @@ class Carbuncle {
 	 * Returns all users with access to
 	 * any given permission(s).
 	 *
-	 * @param  array  $permissions
+	 * @param  array $permissions
 	 * @return array
 	 */
 	public function findAllUsersWithAnyAccess(array $permissions)
@@ -671,7 +636,7 @@ class Carbuncle {
 	/**
 	 * Creates a user.
 	 *
-	 * @param  array  $credentials
+	 * @param  array $credentials
 	 * @return \Einherjars\Carbuncle\Users\UserInterface
 	 */
 	public function createUser(array $credentials)
@@ -692,40 +657,39 @@ class Carbuncle {
 	/**
 	 * Finds a throttler by the given user ID.
 	 *
-	 * @param  mixed   $id
-	 * @param  string  $ipAddress
+	 * @param  mixed  $id
+	 * @param  string $ipAddress
 	 * @return \Einherjars\Carbuncle\Throttling\ThrottleInterface
 	 */
 	public function findThrottlerByUserId($id, $ipAddress = null)
 	{
-		return $this->throttleProvider->findByUserId($id,$ipAddress);
+		return $this->throttleProvider->findByUserId($id, $ipAddress);
 	}
 
 	/**
 	 * Finds a throttling interface by the given user login.
 	 *
-	 * @param  string  $login
-	 * @param  string  $ipAddress
+	 * @param  string $login
+	 * @param  string $ipAddress
 	 * @return \Einherjars\Carbuncle\Throttling\ThrottleInterface
 	 */
 	public function findThrottlerByUserLogin($login, $ipAddress = null)
 	{
-		return $this->throttleProvider->findByUserLogin($login,$ipAddress);
+		return $this->throttleProvider->findByUserLogin($login, $ipAddress);
 	}
 
 	/**
 	 * Handle dynamic method calls into the method.
 	 *
-	 * @param  string  $method
-	 * @param  array   $parameters
+	 * @param  string $method
+	 * @param  array  $parameters
 	 * @return mixed
 	 * @throws \BadMethodCallException
 	 */
 	public function __call($method, $parameters)
 	{
-		if (isset($this->user))
-		{
-			return call_user_func_array(array($this->user, $method), $parameters);
+		if (isset($this->user)) {
+			return call_user_func_array([$this->user, $method], $parameters);
 		}
 
 		throw new \BadMethodCallException("Method [$method] is not supported by Carbuncle or no User has been set on Carbuncle to access shortcut method.");
